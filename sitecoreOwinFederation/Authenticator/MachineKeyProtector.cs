@@ -10,7 +10,7 @@ namespace SitecoreOwinFederator.Authenticator
     /// <summary>
     /// MachineKey Protector, same implementation as internal machinekey protector.
     /// </summary>
-    internal class MachineKeyProtector : IDataProtector
+    public class MachineKeyProtector : IDataProtector
     {
         private readonly string[] _purpose =
         {
