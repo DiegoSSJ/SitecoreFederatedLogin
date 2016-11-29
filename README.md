@@ -20,4 +20,13 @@ to install:
     <add key="owin:AppStartup" value="YourOwn.Project.Startup" />    
   </appSettings>
   ```
+* If you are going to use WSFederation Auth, then you should probably set the requestValidationMode to 2.0 (or anything lower than 4.0) so that IIS doesn't stop the authentication process
+due to a potentially dangerous Request.Form value error. For better security just set it to 2.0 on the path to your endpoint. I.e.:
+```
+  <location path="/login">
+    <system.web>
+      <httpRuntime requestValidationMode="2.0" />
+    </system.web>
+  </location>
+```
 * If there are any questions: please feel free to contact me.
