@@ -1,29 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using System.Web;
 using Sitecore.Diagnostics;
 using Sitecore.Pipelines.PreprocessRequest;
 
 namespace SitecoreOwinFederator.pipelines.PreprocessRequest
 {
-    public class SuppressAdfsFormValidation : PreprocessRequestProcessor
+  public class SuppressAdfsFormValidation : PreprocessRequestProcessor
+  {
+    public override void Process(PreprocessRequestArgs args)
     {
-        public override void Process(PreprocessRequestArgs args)
+      Assert.ArgumentNotNull(args, "args");
+      try
+      {
+        new SuppressFormValidation().Process(args);
+      }
+      catch (HttpRequestValidationException exception)
+      {
+        Log.Debug("ADFSAuth: " + exception.Message);        
+        string rawUrl = args.Context.Request.RawUrl;
+        if (!rawUrl.Contains("sample item") && !rawUrl.Contains("secure") && !rawUrl.Contains("login") && !rawUrl.Equals("/") )
         {
-            Assert.ArgumentNotNull(args, "args");
-            try
-            {
-                new SuppressFormValidation().Process(args);
-            }
-            catch (HttpRequestValidationException)
-            {
-                string rawUrl = args.Context.Request.RawUrl;
-                if (!rawUrl.Contains("sample item") && !rawUrl.Contains("secure") && !rawUrl.Contains("login"))
-                {
-                    throw;
-                }
-            }
+          Log.Debug("ADFSAuth:  re-throwing form validation error for path: " + rawUrl);
+          throw;
         }
+        Log.Debug("ADFSAuth:  ignoring form validation error for path: " + rawUrl);
+      }
     }
+  }
 }
