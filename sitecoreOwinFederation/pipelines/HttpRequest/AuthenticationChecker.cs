@@ -1,20 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
 using System.Web;
 using System.Web.Security;
-using Microsoft.Owin.Security;
-using Microsoft.Owin.Security.DataHandler;
 using Sitecore;
 using Sitecore.Configuration;
 using Sitecore.Diagnostics;
 using Sitecore.Pipelines.HttpRequest;
 using Sitecore.Security.Authentication;
 using Sitecore.Sites;
+using Sitecore.StringExtensions;
 using Sitecore.Text;
 using Sitecore.Web;
 using SitecoreOwinFederator.Authenticator;
+using SitecoreOwinFederator.Pipelines.HttpRequest;
 
 namespace SitecoreOwinFederator.pipelines.HttpRequest
 {
@@ -38,10 +36,27 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
       key = IdentityHelper.GetAuthTokenFromCookie();
       Log.Debug("ADFSAuth: In AuthChecker. Domain is " + Context.Domain.Name);
 
+    
+      //HttpContext.Current.Response.Cookies.Set(new HttpCookie("adfsSavedPath", HttpContext.Current.Request.Path));      
+      //if (Context.Item != null)
+      //  WebUtil.SetCookieValue(Constants.adfsCurrentPathSaveCookieName, LinkManager.GetItemUrl(Context.Item));
+      if (!HttpContext.Current.Request.Path.Contains("-") && !HttpContext.Current.Request.Path.Contains("~")
+          && !HttpContext.Current.Request.Path.Contains(".") && !HttpContext.Current.Request.Path.Contains("/sitecore/") &&
+          !HttpContext.Current.Request.Path.Contains("/shell/") &&
+          !HttpContext.Current.Request.Path.Contains("/login") &&
+          ((HttpContext.Current.Request.UrlReferrer != null && 
+          !HttpContext.Current.Request.UrlReferrer.AbsoluteUri.Contains("wtrealm")) ||
+          (HttpContext.Current.Request.UrlReferrer == null)))
+      {
+        Log.Debug("ADFSAuth: Writing location cookie to " + HttpContext.Current.Request.RawUrl);
+        WebUtil.SetCookieValue(Constants.AdfsCurrentPathSaveCookieName, HttpContext.Current.Request.RawUrl);
+      }        
+
       // only check if domain is not equal to the sitecore domain
       // TODO: can be removed if we are logging in with claims as well for editors
-      if (!Context.Domain.Name.Equals("sitecore"))
-      {
+      //if (!Context.Domain.Name.Equals("sitecore") || !( Context.IsLoggedIn && Context.User.Domain.Name.Equals("sitecore")) )
+      //if (HttpContext.Current.Request.IsAuthenticated)
+      //{
         federatedUser = IdentityHelper.GetCurrentClaimsPrincipal() as ClaimsPrincipal;
 
         // algorithm:
@@ -56,12 +71,17 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
 
         Log.Debug("ADFAuth: In AuthChecker. User is logged in: " + Context.IsLoggedIn + " key: " + key + " federatedUser: " + (federatedUser != null ? federatedUser.Identity.Name : "null"));
 
+
+
         // 1 - anonymous
         if (!Context.IsLoggedIn && String.IsNullOrEmpty(key))
           return;
         // 5 & 7 - pipeline if user is logged in
         else if (Context.IsLoggedIn && String.IsNullOrEmpty(key))
         {
+          // Logged in from Sitecore 
+          if (Context.IsLoggedIn && Context.User.Domain.Name.Equals("sitecore"))
+            return;
           LogoutAndRedirectToLogoutPage();
         }
 
@@ -88,19 +108,32 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
           // do not compare domain as the domain can sometimes not match. or take the domain from the claim -> better for multisites
           string customName = CustomGetNameFromClaims(federatedUser.Identity as ClaimsIdentity);
           Log.Debug("ADFSAuth in AuthChecker - customName is " + customName);
-          if (!user.Name.Split('\\')[1].Equals(customName == null ? federatedUser.Identity.Name: customName))
+          if (
+            !user.Name.ToLower()
+              .Equals(customName.IsNullOrEmpty() ? federatedUser.Identity.Name.ToLower() : customName.ToLower()))
           {
-            Log.Debug("ADFSAuth: user name and federated name did not match, logging out user");
+            Log.Debug("ADFSAuth: user name and federated name did not match, log in out user");
             LogoutAndRedirectToLogoutPage();
           }
-        }
+          else return;
+
+          if (customName != null)
+          {
+            Log.Debug("ADFSAuth " + this.GetType().DeclaringMethod.Name + ": CustomName is " + customName + " relogging user as that");
+            Log.Debug("ADFSAuth  is forms enabled: " + FormsAuthentication.IsEnabled);
+            AuthenticationManager.SetActiveUser(customName);
+            LoginHelper loginHelper = new LoginHelper();
+            loginHelper.Login(federatedUser);
+          }
+        //}
         // several options:
         // Callback from the federated Identity provider, or an unexpected situation
-        else
-        {
+        //else
+        //{
           // Callback from the identity provider
           // entry from /login, auth context
           Log.Debug("ADFSAuth in AuthChecker: Unexpected callback");
+
 
           if (HttpContext.Current.Request.Url.PathAndQuery.StartsWith("/login",
             StringComparison.InvariantCultureIgnoreCase))
@@ -114,7 +147,7 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
           //Log to database for other situation
           Log.Debug("ADFSAuth: logging out");
           LogoutAndRedirectToLogoutPage();
-        }
+        //}
       }
     }
     private void LogoutAndRedirectToLogoutPage()
