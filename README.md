@@ -48,11 +48,10 @@ etter security just set it to 2.0 on the path to your endpoint. I.e.:
     </pipelines>
 ```
 * You can specify that the authenticator module return your users to the original path on the site they were at by using the Sitecore setting ADFS.Authenticator.RedirectToCurrentLocation
-* You can specify roles for which users beloging to will be redirected to the EE editor for edition (param sc_mode=edit). Use the Sitecore setting ADFS.Authenticator.RolesToRedirectToEdit.
-* roles are pipe (|) separated. 
+* You can specify roles for which users beloging to will be redirected to the EE editor for edition (param sc_mode=edit). Use the Sitecore setting ADFS.Authenticator.RolesToRedirectToEdit. Roles are pipe (|) separated. 
 * Examples for both settings:
 ```
  <setting name="ADFS.Authenticator.RedirectToCurrentLocation" value="true" />
  <setting name="ADFS.Authenticator.RolesToRedirectToEdit" value="yourdomain\yourrole|yourdomain\anotherole" />
 ```
-* If there are any questions: please feel free to contact me (Diego Saavedra San Juan or the original repo owner, Bas Lijten)
+* If there are any questions: please feel free to contact me (diegossj or the original repo owner, Bas Lijten)
