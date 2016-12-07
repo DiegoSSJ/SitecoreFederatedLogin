@@ -6,7 +6,6 @@ using System.Security.Principal;
 using System.Web;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.DataHandler;
-using Microsoft.Owin.Security.WsFederation;
 
 namespace SitecoreOwinFederator.Authenticator
 {

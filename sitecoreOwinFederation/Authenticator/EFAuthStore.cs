@@ -2,16 +2,12 @@
 using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.DataHandler;
 using System;
-using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Data.Entity;
 using System.Data.Entity.ModelConfiguration.Conventions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Sitecore.Security.Authentication;
-using SitecoreOwinFederator.Pipelines.HttpRequest;
-using System.Security.Claims;
 
 /// <summary>
 /// This implementation is a literal copy paste from Vittorio Bertocci
