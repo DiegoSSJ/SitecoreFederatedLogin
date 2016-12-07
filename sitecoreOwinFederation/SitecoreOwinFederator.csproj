@@ -172,16 +172,10 @@
   <ItemGroup>
     <None Include="App_Config\Include\WSFederation.Pipeline.SuppressFormValidation.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </None>
     <None Include="App_Config\Include\WSFederation.Pipeline.UserResolver.config" />
     <Content Include="packages.config" />
-    <Content Include="sitecore modules\shell\federation\login.aspx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Views\web.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Views\Auth\ExternalLogin.cshtml" />
     <None Include="_CreateNewNuGetPackage\DoNotModify\NuGet.exe" />
     <Content Include="_CreateNewNuGetPackage\RunMeToUploadNuGetPackage.cmd" />
     <Content Include="_CreateNewNuGetPackage\DoNotModify\UploadNuGetPackage.ps1" />
@@ -193,42 +187,20 @@
     <Compile Include="Authenticator\IdentityHelper.cs" />
     <Compile Include="Authenticator\EFAuthStore.cs" />
     <Compile Include="Authenticator\MachineKeyProtector.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="Controllers\AuthController.cs" />
     <Compile Include="Controllers\ChallengeResult.cs" />
-    <Compile Include="Controllers\HelloWorldController.cs" />
     <Compile Include="Models\UserClaimsModel.cs" />
     <Compile Include="pipelines\HttpRequest\AuthenticationChecker.cs" />
     <Compile Include="pipelines\HttpRequest\LoginHelper.cs" />
     <Compile Include="pipelines\PreprocessRequest\SuppressADFSFormValidation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="sitecore modules\shell\federation\login.aspx.cs">
-      <DependentUpon>login.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="sitecore modules\shell\federation\login.aspx.designer.cs">
-      <DependentUpon>login.aspx</DependentUpon>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
     <Compile Include="Startup.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
     <None Include="Properties\PublishProfiles\multi.pubxml" />
     <None Include="Properties\PublishProfiles\owin.local.pubxml" />
-    <Content Include="Views\layouts\_Layout.cshtml" />
-    <Content Include="Views\Auth\Index.cshtml" />
-    <Content Include="Views\Auth\Logout.cshtml" />
-    <None Include="Web.config">
-      <SubType>Designer</SubType>
-    </None>
-    <Content Include="Views\HelloWorld\Index.cshtml" />
-    <None Include="Web.Debug.config">
-      <DependentUpon>Web.config</DependentUpon>
-    </None>
-    <None Include="Web.Release.config">
-      <DependentUpon>Web.config</DependentUpon>
-    </None>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
