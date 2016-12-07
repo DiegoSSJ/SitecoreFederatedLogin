@@ -12,9 +12,6 @@ using Sitecore.Diagnostics;
 using Sitecore.Security.Accounts;
 using Sitecore.Security.Authentication;
 using Sitecore.StringExtensions;
-using Sitecore.Web;
-using SitecoreOwinFederator.Authenticator;
-using SitecoreOwinFederator.pipelines.HttpRequest;
 
 #endregion
 
@@ -52,8 +49,10 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
       var liuId = GetLiUIdFromClaims(principal.Identity as ClaimsIdentity);
       if (string.IsNullOrEmpty(liuId))
         throw new IdentityNotMappedException();
+      
 
       var userName = string.Format("{0}\\{1}", Context.Domain.Name, liuId.IsNullOrEmpty() ?  identity.Name : liuId);
+      
       Log.Debug("ADFSAuth: userName is " + userName + " Domain is : " + Context.Domain.Name);
       try
       {
@@ -68,8 +67,10 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
 
           if (loginResult && loginResult2)
           {
+            
             Log.Info("ADFS: User " + userName + " authenticated and logged in as existing user in Sitecore", this);
-            var profile = Context.User.Profile;
+            var profile = Context.User.Profile;            
+
             if (profile != null)
             {
               // Vi vill helst göra så här, men eftersom Sitecore har ingenting på sv-SE (tömma strängar överallt alltså)
@@ -191,7 +192,7 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
     /// Returns the LiU-id from the claims
     /// </summary>
     /// <param name="claimsIdentity">The claims identity.</param>
-    private string GetLiUIdFromClaims(ClaimsIdentity claimsIdentity)
+    public string GetLiUIdFromClaims(ClaimsIdentity claimsIdentity)
     {
       if (claimsIdentity == null)
       {
