@@ -39,14 +39,14 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
     
       //HttpContext.Current.Response.Cookies.Set(new HttpCookie("adfsSavedPath", HttpContext.Current.Request.Path));      
       //if (Context.Item != null)
-      //  WebUtil.SetCookieValue(Constants.adfsCurrentPathSaveCookieName, LinkManager.GetItemUrl(Context.Item));
-      if (!HttpContext.Current.Request.Path.Contains("-") && !HttpContext.Current.Request.Path.Contains("~")
+      //  WebUtil.SetCookieValue(Constants.adfsCurrentPathSaveCookieName, LinkManager.GetItemUrl(Context.Item));      
+      if (!HttpContext.Current.Request.Path.Contains("/-/") && !HttpContext.Current.Request.Path.Contains("~")
           && !HttpContext.Current.Request.Path.Contains(".") && !HttpContext.Current.Request.Path.Contains("/sitecore/") &&
           !HttpContext.Current.Request.Path.Contains("/shell/") &&
           !HttpContext.Current.Request.Path.Contains("/login") &&
           ((HttpContext.Current.Request.UrlReferrer != null && 
           !HttpContext.Current.Request.UrlReferrer.AbsoluteUri.Contains("wtrealm")) ||
-          (HttpContext.Current.Request.UrlReferrer == null)))
+          (HttpContext.Current.Request.UrlReferrer == null )))
       {
         Log.Debug("ADFSAuth: Writing location cookie to " + HttpContext.Current.Request.RawUrl);
         WebUtil.SetCookieValue(Constants.AdfsCurrentPathSaveCookieName, HttpContext.Current.Request.RawUrl);
