@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Sitecore.Diagnostics;
+using System.Data.Entity.Infrastructure;
 
 /// <summary>
 /// This implementation is a literal copy paste from Vittorio Bertocci
@@ -62,26 +63,49 @@ namespace SitecoreOwinFederator.Authenticator
     private void GarbageCollect(object state)
     {
       DateTimeOffset now = DateTimeOffset.Now.ToUniversalTime();
-      try
+      int gcTries = 0;
+      bool collected = false;
+      while (!collected && gcTries < 10)
       {
-        using (SQLAuthSessionStoreContext _store = new SQLAuthSessionStoreContext(_connectionString))
+        gcTries++;
+        try
         {
-          foreach (var entry in _store.Entries)
+          using (SQLAuthSessionStoreContext _store = new SQLAuthSessionStoreContext(_connectionString))
           {
-            var expiresAt = _formatter.Unprotect(entry.TicketString).Properties.ExpiresUtc;
-            if (expiresAt < now)
+            foreach (var entry in _store.Entries)
             {
-              _store.Entries.Remove(entry);
+              var expiresAt = _formatter.Unprotect(entry.TicketString).Properties.ExpiresUtc;
+              if (expiresAt < now)
+              {
+                _store.Entries.Remove(entry);
+              }
             }
+
+            try
+            {
+              _store.SaveChanges();
+              collected = true;
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+              // Update the values of the entity that failed to save from the store 
+              ex.Entries.Single().Reload();
+            }            
           }
-          _store.SaveChanges();
+        }
+        // Handle wrongly configured database strings and other situations like that. 
+        catch (SqlException sqlException)
+        {
+          Log.SingleError("SitecoreOwin: sqlException doing garbage collect for EFAuthStore, is the database for the auth tokens well configured?. Exception: " + sqlException.Message, this);         
+        }        
+        catch(Exception e)
+        {
+          Log.Error("SitecoreOwin: exception in garbage collect: " + e.Message, this);
+          Log.Error("SitecoreOwin: exception in garbage collect stacktrace: " + e.StackTrace, this);
         }
       }
-      // Handle wrongly configured database strings and other situations like that. 
-      catch (SqlException sqlException)
-      {
-        Log.SingleError("SitecoreOwin: sqlException doing garbage collect for EFAuthStore, is the database for the auth tokens well configured?. Exception: " + sqlException.Message, this);
-      }
+      if (!collected)
+        Log.Error("SitecoreOwin: collection of auth keys not done after " + gcTries + " tries ", this);
     }
 
     public Task<string> StoreAsync(AuthenticationTicket ticket)
