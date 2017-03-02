@@ -12,6 +12,7 @@ using Sitecore.Diagnostics;
 using Sitecore.Security.Accounts;
 using Sitecore.Security.Authentication;
 using Sitecore.StringExtensions;
+using Sitecore.Web.Authentication;
 
 #endregion
 
@@ -62,13 +63,13 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
 
           Boolean loginResult = AuthenticationManager.Login(realUser);
           // Behövs så att TicketManager körs, via allowLogintoShell = true
-          Boolean loginResult2 = AuthenticationManager.Login(userName, true, true);
-
+          Boolean loginResult2 = AuthenticationManager.Login(userName, !Settings.Login.DisableRememberMe, true);
+          Log.Debug("ADFS: Logging user with persist: " + !Settings.Login.DisableRememberMe, this);         
 
           if (loginResult && loginResult2)
           {
             
-            Log.Info("ADFS: User " + userName + " authenticated and logged in as existing user in Sitecore", this);
+            Log.Audit("ADFS: User " + userName + " authenticated and logged in as existing user in Sitecore", this);
             var profile = Context.User.Profile;            
 
             if (profile != null)

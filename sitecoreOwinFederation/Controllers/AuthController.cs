@@ -82,6 +82,8 @@ namespace SitecoreOwinFederator.Controllers
 
       if (Request.IsAuthenticated)
       {
+        Log.Audit("ADFSAuth: Logging out user " + Context.User.Name,this);
+
         string redirect = "/";
         if (!WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName).IsNullOrEmpty() && Settings.GetBoolSetting(Constants.RedirectToCurrentLocationSettingName, false))
           redirect = WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName);
