@@ -30,13 +30,22 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
     public override void Process(HttpRequestArgs args)
     {
       Assert.ArgumentNotNull(args, "args");
-      var sitecoreUserLoggedIn = Context.IsLoggedIn;
+
+      //Log.Info("ADFS: Request.Path: " + HttpContext.Current.Request.Path, this);
+      //Log.Info("ADFS: Request.RawUrl: " + HttpContext.Current.Request.RawUrl, this);
+      if (HttpContext.Current.Request.RawUrl.EndsWith(".css") || HttpContext.Current.Request.RawUrl.EndsWith(".js")
+       || HttpContext.Current.Request.Path.Contains("/dist/") || HttpContext.Current.Request.Path.Contains("/iconcache/"))
+      {
+        //Log.Info("ADFS: Skipping static content from auth ",this);
+        return;
+      }
+
       string key = String.Empty;
       ClaimsPrincipal federatedUser = null;
       key = IdentityHelper.GetAuthTokenFromCookie();
       Log.Debug("ADFSAuth: In AuthChecker. Domain is " + Context.Domain.Name);
 
-    
+
       //HttpContext.Current.Response.Cookies.Set(new HttpCookie("adfsSavedPath", HttpContext.Current.Request.Path));      
       //if (Context.Item != null)
       //  WebUtil.SetCookieValue(Constants.adfsCurrentPathSaveCookieName, LinkManager.GetItemUrl(Context.Item));      

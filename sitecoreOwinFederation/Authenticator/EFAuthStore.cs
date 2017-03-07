@@ -7,7 +7,7 @@ using System.Data.Entity;
 using System.Data.Entity.ModelConfiguration.Conventions;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Threading;
+using System.Timers;
 using System.Threading.Tasks;
 using Sitecore.Diagnostics;
 using System.Data.Entity.Infrastructure;
@@ -52,53 +52,62 @@ namespace SitecoreOwinFederator.Authenticator
   {
     private string _connectionString;
     private TicketDataFormat _formatter;
-    private Timer _gcTimer;
+    private static Timer _gcTimer;
+    private static SQLAuthSessionStoreContext _permStore;
     public SqlAuthSessionStore(TicketDataFormat tdf, string cns = "AuthSessionStoreContext")
     {
+      //Log.Info("ADFSAuth: Initializing SqlAuthSessionStore", this);
       _connectionString = cns;
       _formatter = tdf;
-      _gcTimer = new Timer(new TimerCallback(GarbageCollect), null, TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(15));
+      if (_gcTimer == null)
+      {
+        _gcTimer = new Timer(900000); // 15 min
+        _gcTimer.Elapsed += GarbageCollect;
+        _gcTimer.Enabled = true;
+      }
+      if (_permStore == null)
+        _permStore = new SQLAuthSessionStoreContext(_connectionString);
     }
 
-    private void GarbageCollect(object state)
+    private void GarbageCollect(Object source, ElapsedEventArgs eea)
     {
       DateTimeOffset now = DateTimeOffset.Now.ToUniversalTime();
       int gcTries = 0;
       bool collected = false;
+
+      //Log.Info("ADFS: In GarbageCollect", this);
+      //Log.Info("ADFS: GarbageCollect call trace: " + Environment.StackTrace, this);
       while (!collected && gcTries < 10)
       {
         gcTries++;
         try
         {
-          using (SQLAuthSessionStoreContext _store = new SQLAuthSessionStoreContext(_connectionString))
+          foreach (var entry in _permStore.Entries)
           {
-            foreach (var entry in _store.Entries)
+            var expiresAt = _formatter.Unprotect(entry.TicketString).Properties.ExpiresUtc;
+            if (expiresAt < now)
             {
-              var expiresAt = _formatter.Unprotect(entry.TicketString).Properties.ExpiresUtc;
-              if (expiresAt < now)
-              {
-                _store.Entries.Remove(entry);
-              }
+              _permStore.Entries.Remove(entry);
             }
+          }
 
-            try
-            {
-              _store.SaveChanges();
-              collected = true;
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-              // Update the values of the entity that failed to save from the store 
-              ex.Entries.Single().Reload();
-            }            
+          try
+          {
+            _permStore.SaveChanges();
+            collected = true;
+          }
+          catch (DbUpdateConcurrencyException ex)
+          {
+            // Update the values of the entity that failed to save from the store 
+            ex.Entries.Single().Reload();
           }
         }
         // Handle wrongly configured database strings and other situations like that. 
         catch (SqlException sqlException)
         {
-          Log.SingleError("SitecoreOwin: sqlException doing garbage collect for EFAuthStore, is the database for the auth tokens well configured?. Exception: " + sqlException.Message, this);         
-        }        
-        catch(Exception e)
+          Log.SingleError("SitecoreOwin: sqlException doing garbage collect for EFAuthStore, is the database for the auth tokens well configured?. Exception: " + sqlException.Message, this);
+        }
+        catch (Exception e)
         {
           Log.Error("SitecoreOwin: exception in garbage collect: " + e.Message, this);
           Log.Error("SitecoreOwin: exception in garbage collect stacktrace: " + e.StackTrace, this);
@@ -110,59 +119,49 @@ namespace SitecoreOwinFederator.Authenticator
 
     public Task<string> StoreAsync(AuthenticationTicket ticket)
     {
+      //Log.Info("ADFS: In StoreAsync", this);
       string key = Guid.NewGuid().ToString();
-      using (SQLAuthSessionStoreContext _store = new SQLAuthSessionStoreContext(_connectionString))
-      {
-        _store.Entries.Add(new AuthSessionEntry { Key = key, TicketString = _formatter.Protect(ticket), ValidUntil = ticket.Properties.ExpiresUtc });
-        _store.SaveChanges();
-      }
-
+      _permStore.Entries.Add(new AuthSessionEntry { Key = key, TicketString = _formatter.Protect(ticket), ValidUntil = ticket.Properties.ExpiresUtc });
+      _permStore.SaveChanges();
       return Task.FromResult(key);
     }
 
     public Task RenewAsync(string key, AuthenticationTicket ticket)
     {
-      using (SQLAuthSessionStoreContext _store = new SQLAuthSessionStoreContext(_connectionString))
+      //Log.Info("ADFS: In RenewAsync", this)
+      AuthSessionEntry myEntry = _permStore.Entries.FindAsync(key).Result;
+      if (myEntry != null)
       {
-        AuthSessionEntry myEntry = _store.Entries.FirstOrDefault(a => a.Key == key);
-        if (myEntry != null)
-        {
-          myEntry.TicketString = _formatter.Protect(ticket);
-        }
-        else
-        {
-          _store.Entries.Add(new AuthSessionEntry { Key = key, TicketString = _formatter.Protect(ticket) });
-        }
-        _store.SaveChanges();
-
+        myEntry.TicketString = _formatter.Protect(ticket);
       }
+      else
+      {
+        _permStore.Entries.Add(new AuthSessionEntry { Key = key, TicketString = _formatter.Protect(ticket) });
+      }
+      _permStore.SaveChanges();
       return Task.FromResult(0);
     }
 
     public Task<AuthenticationTicket> RetrieveAsync(string key)
     {
+      //Log.Info("ADFS: In RetrieveAsync", this);
+      //Log.Info("ADFS: RetrieveAsync call trace: " + Environment.StackTrace, this);
       AuthenticationTicket ticket = null;
-      using (SQLAuthSessionStoreContext _store = new SQLAuthSessionStoreContext(_connectionString))
-      {
-        AuthSessionEntry myEntry = _store.Entries.FirstOrDefault(a => a.Key == key);
-        if (myEntry != null)
-          ticket = _formatter.Unprotect(myEntry.TicketString);
-        return Task.FromResult(ticket);
-      }
+      AuthSessionEntry myEntry = _permStore.Entries.FindAsync(key).Result;
+      if (myEntry != null)
+        ticket = _formatter.Unprotect(myEntry.TicketString);
+      return Task.FromResult(ticket);
     }
 
     public Task RemoveAsync(string key)
     {
-      using (SQLAuthSessionStoreContext _store = new SQLAuthSessionStoreContext(_connectionString))
+      //Log.Info("ADFS: In RemoveAsync", this);   
+      AuthSessionEntry myEntry = _permStore.Entries.FindAsync(key).Result;
+      if (myEntry != null)
       {
-        AuthSessionEntry myEntry = _store.Entries.FirstOrDefault(a => a.Key == key);
-        if (myEntry != null)
-        {
-          _store.Entries.Remove(myEntry);
-          _store.SaveChanges();
-        }
+        _permStore.Entries.Remove(myEntry);
+        _permStore.SaveChanges();
       }
-
       return Task.FromResult(0);
     }
   }
