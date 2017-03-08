@@ -61,7 +61,8 @@ namespace SitecoreOwinFederator.Authenticator
       _formatter = tdf;
       if (_gcTimer == null)
       {
-        _gcTimer = new Timer(900000); // 15 min
+        //_gcTimer = new Timer(900000); // 15 min
+        _gcTimer = new Timer(60000); // 1 min
         _gcTimer.Elapsed += GarbageCollect;
         _gcTimer.Enabled = true;
       }
@@ -77,14 +78,32 @@ namespace SitecoreOwinFederator.Authenticator
 
       //Log.Info("ADFS: In GarbageCollect", this);
       //Log.Info("ADFS: GarbageCollect call trace: " + Environment.StackTrace, this);
+
+      if (_permStore == null || _permStore.Entries == null)
+      {
+        Log.SingleError("ADFSAuth: In GarbageCollect, permStore or entries is null, GarbageCollect won't run!", this);
+        return;
+      }
+
       while (!collected && gcTries < 10)
       {
         gcTries++;
         try
-        {
+        {            
           foreach (var entry in _permStore.Entries)
           {
-            var expiresAt = _formatter.Unprotect(entry.TicketString).Properties.ExpiresUtc;
+            AuthenticationTicket unprotectedKey = _formatter.Unprotect(entry.TicketString);
+            if (unprotectedKey == null)
+            {
+              // The key is unprotectable, delete it from db
+              Log.Error("ADFSAuth: In GarbageCollect, unprotected key is null for TicketString: " + entry.TicketString, this);
+              Log.Error("ADFSAuth: In GarbageCollect, removing entry from database: " + entry.Key, this);
+              _permStore.Entries.Remove(entry);              
+            }
+            if (unprotectedKey != null && unprotectedKey.Properties?.ExpiresUtc == null)
+              Log.Error("ADFSAuth: In GarbageCollect, unprotected key properties or expires utc is null for ticketstring: " + entry.TicketString, this);            
+
+            var expiresAt = unprotectedKey?.Properties?.ExpiresUtc;
             if (expiresAt < now)
             {
               _permStore.Entries.Remove(entry);
