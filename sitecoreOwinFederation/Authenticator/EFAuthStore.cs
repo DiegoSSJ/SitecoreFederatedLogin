@@ -61,8 +61,7 @@ namespace SitecoreOwinFederator.Authenticator
       _formatter = tdf;
       if (_gcTimer == null)
       {
-        //_gcTimer = new Timer(900000); // 15 min
-        _gcTimer = new Timer(60000); // 1 min
+        _gcTimer = new Timer(900000); // 15 min        
         _gcTimer.Elapsed += GarbageCollect;
         _gcTimer.Enabled = true;
       }
