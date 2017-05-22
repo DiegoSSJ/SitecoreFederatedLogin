@@ -41,7 +41,7 @@ namespace SitecoreOwinFederator.Authenticator
     }
   }
 
-  public class SqlAuthSessionStoreInitializer : System.Data.Entity.DropCreateDatabaseIfModelChanges<SQLAuthSessionStoreContext>
+  public class SqlAuthSessionStoreInitializer : DropCreateDatabaseIfModelChanges<SQLAuthSessionStoreContext>
   {
   }
 
@@ -56,12 +56,12 @@ namespace SitecoreOwinFederator.Authenticator
     private static SQLAuthSessionStoreContext _permStore;
     public SqlAuthSessionStore(TicketDataFormat tdf, string cns = "AuthSessionStoreContext")
     {
-      //Log.Info("ADFSAuth: Initializing SqlAuthSessionStore", this);
+      //Log.Info("SitecoreOwin: Initializing SqlAuthSessionStore", this);
       _connectionString = cns;
       _formatter = tdf;
       if (_gcTimer == null)
       {
-        _gcTimer = new Timer(900000); // 15 min        
+        _gcTimer = new Timer(900000); // 15 min               
         _gcTimer.Elapsed += GarbageCollect;
         _gcTimer.Enabled = true;
       }
@@ -78,9 +78,9 @@ namespace SitecoreOwinFederator.Authenticator
       //Log.Info("ADFS: In GarbageCollect", this);
       //Log.Info("ADFS: GarbageCollect call trace: " + Environment.StackTrace, this);
 
-      if (_permStore == null || _permStore.Entries == null)
+      if (_permStore?.Entries == null)
       {
-        Log.SingleError("ADFSAuth: In GarbageCollect, permStore or entries is null, GarbageCollect won't run!", this);
+        Log.SingleError("SitecoreOwin: In GarbageCollect, permStore or entries is null, GarbageCollect won't run!", this);
         return;
       }
 
@@ -95,12 +95,12 @@ namespace SitecoreOwinFederator.Authenticator
             if (unprotectedKey == null)
             {
               // The key is unprotectable, delete it from db
-              Log.Error("ADFSAuth: In GarbageCollect, unprotected key is null for TicketString: " + entry.TicketString, this);
-              Log.Error("ADFSAuth: In GarbageCollect, removing entry from database: " + entry.Key, this);
+              Log.Error("SitecoreOwin: In GarbageCollect, unprotected key is null for TicketString: " + entry.TicketString, this);
+              Log.Error("SitecoreOwin: In GarbageCollect, removing entry from database: " + entry.Key, this);
               _permStore.Entries.Remove(entry);              
             }
             if (unprotectedKey != null && unprotectedKey.Properties?.ExpiresUtc == null)
-              Log.Error("ADFSAuth: In GarbageCollect, unprotected key properties or expires utc is null for ticketstring: " + entry.TicketString, this);            
+              Log.Error("SitecoreOwin: In GarbageCollect, unprotected key properties or expires utc is null for ticketstring: " + entry.TicketString, this);            
 
             var expiresAt = unprotectedKey?.Properties?.ExpiresUtc;
             if (expiresAt < now)
@@ -117,18 +117,20 @@ namespace SitecoreOwinFederator.Authenticator
           catch (DbUpdateConcurrencyException ex)
           {
             // Update the values of the entity that failed to save from the store 
-            ex.Entries.Single().Reload();
+            LogErrorToSitecore(
+            "Update Concurrency Exception in Garbage Collect", ex);
+            ex.Entries.Single().Reload();   
           }
         }
         // Handle wrongly configured database strings and other situations like that. 
         catch (SqlException sqlException)
         {
-          Log.SingleError("SitecoreOwin: sqlException doing garbage collect for EFAuthStore, is the database for the auth tokens well configured?. Exception: " + sqlException.Message, this);
+          LogErrorToSitecore(
+             " sql Exception doing garbage collect for EFAuthStore, is the database for the auth tokens well configured ?", sqlException);
         }
         catch (Exception e)
         {
-          Log.Error("SitecoreOwin: exception in garbage collect: " + e.Message, this);
-          Log.Error("SitecoreOwin: exception in garbage collect stacktrace: " + e.StackTrace, this);
+          LogErrorToSitecore("Exception in garbage collect", e);
         }
       }
       if (!collected)
@@ -137,24 +139,71 @@ namespace SitecoreOwinFederator.Authenticator
 
     public Task<string> StoreAsync(AuthenticationTicket ticket)
     {
-      //Log.Info("ADFS: In StoreAsync", this);
+      //Log.Info("SitecoreOwin: In StoreAsync", this);
       string key = Guid.NewGuid().ToString();
-      _permStore.Entries.Add(new AuthSessionEntry { Key = key, TicketString = _formatter.Protect(ticket), ValidUntil = ticket.Properties.ExpiresUtc });
-      _permStore.SaveChanges();
+      AuthSessionEntry newEntry = new AuthSessionEntry
+      {
+        Key = key,
+        TicketString = _formatter.Protect(ticket),
+        ValidUntil = ticket.Properties.ExpiresUtc
+      };
+      try
+      {
+        _permStore.Entries.Add(newEntry);
+        _permStore.SaveChanges();
+      }
+      catch (Exception e)
+      {
+        LogErrorToSitecore("Error creating session key in authentication key database", e);
+        try
+        {
+          _permStore.Entries.Remove(newEntry);
+        }
+        catch (Exception e2)
+        {
+          LogErrorToSitecore("Error removing session key after error creating it", e2);
+        }
+        // We want Owin to ignore that the key was added if it didn't work, is this the way to do it?
+        // ->gives an error, but the site continues to work.okay?
+      key = null;
+      }
       return Task.FromResult(key);
     }
 
     public Task RenewAsync(string key, AuthenticationTicket ticket)
     {
-      //Log.Info("ADFS: In RenewAsync", this)
-      AuthSessionEntry myEntry = _permStore.Entries.FindAsync(key).Result;
+      //Log.Info("SitecoreOwin: In RenewAsync", this)
+      AuthSessionEntry myEntry = _permStore.Entries.Find(key);
       if (myEntry != null)
       {
         myEntry.TicketString = _formatter.Protect(ticket);
       }
       else
       {
-        _permStore.Entries.Add(new AuthSessionEntry { Key = key, TicketString = _formatter.Protect(ticket) });
+        AuthSessionEntry newEntry = new AuthSessionEntry
+        {
+          Key = key,
+          TicketString = _formatter.Protect(ticket)          
+        };
+        try
+        {
+          _permStore.Entries.Add(newEntry);
+        }
+        catch (Exception e)
+        {
+          LogErrorToSitecore("Error renewing session key in authentication key database with new key ", e);
+          try
+          {
+            _permStore.Entries.Remove(newEntry);
+          }
+          catch (Exception e2)
+          {
+            LogErrorToSitecore("Error removing session key after error creating it", e2);
+          }
+          // We want Owin to ignore that the key was added if it didn't work, is this the way to do it?
+          // ->gives an error, but the site continues to work.okay?
+          key = null;
+        }
       }
       _permStore.SaveChanges();
       return Task.FromResult(0);
@@ -162,10 +211,10 @@ namespace SitecoreOwinFederator.Authenticator
 
     public Task<AuthenticationTicket> RetrieveAsync(string key)
     {
-      //Log.Info("ADFS: In RetrieveAsync", this);
-      //Log.Info("ADFS: RetrieveAsync call trace: " + Environment.StackTrace, this);
+      //Log.Info("SitecoreOwin: In RetrieveAsync", this);
+      //Log.Info("SitecoreOwin: RetrieveAsync call trace: " + Environment.StackTrace, this);
       AuthenticationTicket ticket = null;
-      AuthSessionEntry myEntry = _permStore.Entries.FindAsync(key).Result;
+      AuthSessionEntry myEntry = _permStore.Entries.Find(key);  
       if (myEntry != null)
         ticket = _formatter.Unprotect(myEntry.TicketString);
       return Task.FromResult(ticket);
@@ -173,14 +222,44 @@ namespace SitecoreOwinFederator.Authenticator
 
     public Task RemoveAsync(string key)
     {
-      //Log.Info("ADFS: In RemoveAsync", this);   
-      AuthSessionEntry myEntry = _permStore.Entries.FindAsync(key).Result;
+      //Log.Info("SitecoreOwin: In RemoveAsync", this);   
+      AuthSessionEntry myEntry = _permStore.Entries.Find(key);
       if (myEntry != null)
       {
         _permStore.Entries.Remove(myEntry);
         _permStore.SaveChanges();
       }
       return Task.FromResult(0);
+    }
+
+    private static string GetExceptionMessages(Exception e, string msgs = "")
+    {
+      if (e == null) return string.Empty;
+      if (msgs == "") msgs = e.Message;
+      if (e.InnerException != null)
+        msgs += "\r\nInnerException: " + GetExceptionMessages(e.InnerException);
+      return msgs;
+    }
+
+    private static string GetExceptionStackTraces(Exception e, string msgs = "")
+    {
+      if (e == null) return string.Empty;
+      if (msgs == "") msgs = e.StackTrace;
+      if (e.InnerException != null)
+        msgs += "\r\nStackTrace: " + GetExceptionStackTraces(e.InnerException);
+      return msgs;
+    }
+
+    private void LogErrorToSitecore(string mainText, Exception e)
+    {
+      Log.SingleError(
+        "SitecoreOwin: " + mainText  + ". Exception: " +
+        e.Message, this);
+      if (e.InnerException != null)
+      {
+        Log.SingleError("SitecoreOwin: Inner Messages " + GetExceptionMessages(e), this);
+        Log.SingleError("SitecoreOwin: Inner StackTrace " + GetExceptionStackTraces(e), this);
+      }
     }
   }
 
