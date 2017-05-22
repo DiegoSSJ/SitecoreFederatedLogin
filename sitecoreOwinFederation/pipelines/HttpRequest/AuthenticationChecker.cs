@@ -43,7 +43,7 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
       string key = String.Empty;
       ClaimsPrincipal federatedUser = null;
       key = IdentityHelper.GetAuthTokenFromCookie();
-      Log.Debug("ADFSAuth: In AuthChecker. Domain is " + Context.Domain.Name);
+      Log.Debug("SitecoreOwin: In AuthChecker. Domain is " + Context.Domain.Name);
 
 
       //HttpContext.Current.Response.Cookies.Set(new HttpCookie("adfsSavedPath", HttpContext.Current.Request.Path));      
@@ -57,7 +57,7 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
           !HttpContext.Current.Request.UrlReferrer.AbsoluteUri.Contains("wtrealm")) ||
           (HttpContext.Current.Request.UrlReferrer == null )))
       {
-        Log.Debug("ADFSAuth: Writing location cookie to " + HttpContext.Current.Request.RawUrl);
+        Log.Debug("SitecoreOwin: Writing location cookie to " + HttpContext.Current.Request.RawUrl);
         WebUtil.SetCookieValue(Constants.AdfsCurrentPathSaveCookieName, HttpContext.Current.Request.RawUrl);
       }        
 
@@ -78,7 +78,7 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
         // 7-  if no claimscookie, no fed ID and sitecore login available: logout and redirect -> pipeline. 
         // handled by  
 
-        Log.Debug("ADFAuth: In AuthChecker. User is logged in: " + Context.IsLoggedIn + " key: " + key + " federatedUser: " + (federatedUser != null ? federatedUser.Identity.Name : "null"));
+        Log.Debug("SitecoreOwin: In AuthChecker. User is logged in: " + Context.IsLoggedIn + " key: " + key + " federatedUser: " + (federatedUser != null ? federatedUser.Identity.Name : "null"));
 
 
 
@@ -107,7 +107,7 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
         else if (!String.IsNullOrEmpty(key) && Context.IsLoggedIn && federatedUser != null)
         {
           var user = Context.User;
-          Log.Debug("ADFSAuth in AuthChecker: Case 8. user name: " + user.Name + " federated name: " + federatedUser.Identity.Name);
+          Log.Debug("SitecoreOwin in AuthChecker: Case 8. user name: " + user.Name + " federated name: " + federatedUser.Identity.Name);
 
           // compare identities
           // if not equal, , there is a cookie mismatch: 
@@ -116,20 +116,20 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
           //      redirect to loginpage.          
           // do not compare domain as the domain can sometimes not match. or take the domain from the claim -> better for multisites
           string customName = CustomGetNameFromClaims(federatedUser.Identity as ClaimsIdentity);
-          Log.Debug("ADFSAuth in AuthChecker - customName is " + customName);
+          Log.Debug("SitecoreOwin in AuthChecker - customName is " + customName);
           if (
             !user.Name.ToLower()
               .Equals(customName.IsNullOrEmpty() ? federatedUser.Identity.Name.ToLower() : customName.ToLower()))
           {
-            Log.Debug("ADFSAuth: user name and federated name did not match, log in out user");
+            Log.Debug("SitecoreOwin: user name and federated name did not match, log in out user");
             LogoutAndRedirectToLogoutPage();
           }
           else return;
 
           if (customName != null)
           {
-            Log.Debug("ADFSAuth " + this.GetType().DeclaringMethod.Name + ": CustomName is " + customName + " relogging user as that");
-            Log.Debug("ADFSAuth  is forms enabled: " + FormsAuthentication.IsEnabled);
+            Log.Debug("SitecoreOwin " + this.GetType().DeclaringMethod.Name + ": CustomName is " + customName + " relogging user as that");
+            Log.Debug("SitecoreOwin  is forms enabled: " + FormsAuthentication.IsEnabled);
             AuthenticationManager.SetActiveUser(customName);
             LoginHelper loginHelper = new LoginHelper();
             loginHelper.Login(federatedUser);
@@ -141,27 +141,27 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
         //{
           // Callback from the identity provider
           // entry from /login, auth context
-          Log.Debug("ADFSAuth in AuthChecker: Unexpected callback");
+          Log.Debug("SitecoreOwin in AuthChecker: Unexpected callback");
 
 
           if (HttpContext.Current.Request.Url.PathAndQuery.StartsWith("/login",
             StringComparison.InvariantCultureIgnoreCase))
           {
-            Log.Debug("ADFSAuth: Callback to login, not doing anything");
+            Log.Debug("SitecoreOwin: Callback to login, not doing anything");
             return;
           }
 
 
           // For all other situations:
           //Log to database for other situation
-          Log.Debug("ADFSAuth: logging out");
+          Log.Debug("SitecoreOwin: logging out");
           LogoutAndRedirectToLogoutPage();
         //}
       }
     }
     private void LogoutAndRedirectToLogoutPage()
     {
-      Log.Debug("ADFSAuth: Logging out and redirecting to logout page");
+      Log.Debug("SitecoreOwin: Logging out and redirecting to logout page");
       string logoutPage = "/logout";
       AuthenticationManager.Logout();
       // Owin.Authentication.Logout does not work in pipeline: need to have an OWIN context: redirect to logout then.
@@ -173,7 +173,7 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
       string loginPage = this.GetLoginPage(Context.Site);
       if (loginPage.Length > 0)
       {
-        Log.Debug("ADFSAuth: Redirecting to login page");
+        Log.Debug("SitecoreOwin: Redirecting to login page");
         Tracer.Info("Redirecting to login page \"" + loginPage + "\".");
         UrlString urlString = new UrlString(loginPage);
         if (Settings.Authentication.SaveRawUrl)
@@ -184,7 +184,7 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
       }
       else
       {
-        Log.Debug("ADFSAuth: Redirecting to error page as no login page was found");
+        Log.Debug("SitecoreOwin: Redirecting to error page as no login page was found");
         Tracer.Info("Redirecting to error page as no login page was found.");
         WebUtil.RedirectToErrorPage("Login is required, but no valid login page has been specified for the site (" + Context.Site.Name + ").", false);
       }

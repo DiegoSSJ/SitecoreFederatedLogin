@@ -26,7 +26,7 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
     /// <param name="principal">The user.</param>
     public void Login(IPrincipal principal)
     {
-      Log.Debug("ADFSAuth: In LoginHelper");
+      Log.Debug("SitecoreOwin: In LoginHelper");
 
       var identity = principal.Identity;
       var allowLoginToShell = false;
@@ -54,7 +54,7 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
 
       var userName = string.Format("{0}\\{1}", Context.Domain.Name, liuId.IsNullOrEmpty() ?  identity.Name : liuId);
       
-      Log.Debug("ADFSAuth: userName is " + userName + " Domain is : " + Context.Domain.Name);
+      Log.Debug("SitecoreOwin: userName is " + userName + " Domain is : " + Context.Domain.Name);
       try
       {
         if (User.Exists(userName))
@@ -127,7 +127,7 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
               allowLoginToShell = true;
           }
           virtualUser.Profile.Email = "aap@app.com";
-          Log.Debug("ADFSAuth: Logging in virtual user: " + virtualUser.Name);
+          Log.Debug("SitecoreOwin: Logging in virtual user: " + virtualUser.Name);
           AuthenticationManager.Login(virtualUser);
           var tracker = Tracker.Current;
           if (tracker != null)

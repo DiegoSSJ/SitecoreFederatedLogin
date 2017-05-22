@@ -15,14 +15,14 @@ namespace SitecoreOwinFederator.pipelines.PreprocessRequest
       }
       catch (HttpRequestValidationException exception)
       {
-        Log.Debug("ADFSAuth: " + exception.Message);        
+        Log.Debug("SitecoreOwin: " + exception.Message);        
         string rawUrl = args.Context.Request.RawUrl;
         if (!rawUrl.Contains("sample item") && !rawUrl.Contains("secure") && !rawUrl.Contains("login") && !rawUrl.Equals("/") )
         {
-          Log.Debug("ADFSAuth:  re-throwing form validation error for path: " + rawUrl);
+          Log.Debug("SitecoreOwin:  re-throwing form validation error for path: " + rawUrl);
           throw;
         }
-        Log.Debug("ADFSAuth:  ignoring form validation error for path: " + rawUrl);
+        Log.Debug("SitecoreOwin:  ignoring form validation error for path: " + rawUrl);
       }
     }
   }
