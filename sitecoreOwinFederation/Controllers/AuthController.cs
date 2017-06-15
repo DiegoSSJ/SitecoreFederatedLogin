@@ -23,29 +23,58 @@ namespace SitecoreOwinFederator.Controllers
   /// </summary>
   public class AuthController : Controller
   {
+    //// GET: Auth
+    //[Authorize]
+    ////public ActionResult Index(string sc_itemid, string sc_lang, string sc_db, string sc_device, string sc_mode, string sc_debug, string sc_trace, string sc_prof, string sc_ri, string sc_rb)
+    //public ActionResult Index(string [] parameters)
+    //{
+    //  Log.Debug("SitecoreOwin Login with string[]");
+    //  //WebUtil.SetCookieValue(Constants.AdfsCurrentPathSaveCookieName, returnUrl);
+    //  return Index();
+    //}
+
+    //// GET: Auth
+    //[Authorize]
+    //public ActionResult Index(string returnUrl)
+    //{
+    //  Log.Debug("SitecoreOwin Login with returnUrl");
+    //  WebUtil.SetCookieValue(Constants.AdfsCurrentPathSaveCookieName, returnUrl);
+    //  return Index();
+    //}
+
     // GET: Auth
     [Authorize]
     public ActionResult Index()
     {
       Log.Debug("SitecoreOwin AuthController Index");
 
-      // Get ID ticket from .ASP.Net cookie. This ticket doesnt contain an identity, 
-      // but a reference to the identity in the Session Store                          
-      var principal = IdentityHelper.GetCurrentClaimsPrincipal();
+      try
+      {
+        // Get ID ticket from .ASP.Net cookie. This ticket doesnt contain an identity, 
+        // but a reference to the identity in the Session Store                          
+        var principal = IdentityHelper.GetCurrentClaimsPrincipal();
 
-      System.Web.HttpContext.Current.GetOwinContext().Authentication.Challenge();
-      Log.Debug("SitecoreOwin Owin user name: " + System.Web.HttpContext.Current.GetOwinContext().Authentication.User.Identity.Name);
+        System.Web.HttpContext.Current.GetOwinContext().Authentication.Challenge();
+        Log.Debug("SitecoreOwin Owin user name: " +
+                  System.Web.HttpContext.Current.GetOwinContext().Authentication.User.Identity.Name);
 
-      var ctx = Tracker.Current.Session;
-      // Login the sitecore user with the claims identity that was provided by identity ticket
-      LoginHelper loginHelper = new LoginHelper();
-      loginHelper.Login(principal);
+        //var ctx = Tracker.Current.Session;
+        // Login the sitecore user with the claims identity that was provided by identity ticket
+        LoginHelper loginHelper = new LoginHelper();
+        loginHelper.Login(principal);
 
-      Log.Debug("SitecoreOwin: After log in in AuthController, user is " + Context.User.GetLocalName());
-      Log.Debug("SitecoreOwin: After log in Owin user name: " + System.Web.HttpContext.Current.GetOwinContext().Authentication.User.Identity.Name);
+        Log.Debug("SitecoreOwin: After log in in AuthController, user is " + Context.User.GetLocalName());
+        Log.Debug("SitecoreOwin: After log in Owin user name: " +
+                  System.Web.HttpContext.Current.GetOwinContext().Authentication.User.Identity.Name);
 
-      System.Web.HttpContext.Current.User = Context.User;
-      ctx = Tracker.Current.Session;
+        System.Web.HttpContext.Current.User = Context.User;
+      }
+      catch (Exception e)
+      {
+        Log.Error("SitecoreOwin error: " + e.Message, e);
+        throw;
+      }
+      //ctx = Tracker.Current.Session;
 
       // temporary code to show user claims, while there is a sitecore user object as
       //UserClaimsModel ucm = new UserClaimsModel();
@@ -81,6 +110,9 @@ namespace SitecoreOwinFederator.Controllers
     {
       Log.Debug("SitecoreOwin AuthController Logout");
 
+      // Change mode to normal to avoid being redirected to Sitecore loggin all the time. 
+      Context.Site.SetDisplayMode(DisplayMode.Normal, DisplayModeDuration.Remember);
+
       if (Request.IsAuthenticated)
       {
         Log.Audit("SitecoreOwin: Logging out user " + Context.User.Name,this);
@@ -105,9 +137,6 @@ namespace SitecoreOwinFederator.Controllers
         if (!TicketManager.GetCurrentTicketId().IsNullOrEmpty())
           TicketManager.RemoveTicket(TicketManager.GetCurrentTicketId());
         WebUtil.SetCookieValue(Constants.SitecoreUserTicketCookieName, "",DateTime.Now.AddDays(-1));
-
-        // Change mode to normal to avoid being redirected to Sitecore loggin all the time. 
-        Context.Site.SetDisplayMode(DisplayMode.Normal, DisplayModeDuration.Remember);
 
         Request.GetOwinContext().Authentication.SignOut(properties);
         
