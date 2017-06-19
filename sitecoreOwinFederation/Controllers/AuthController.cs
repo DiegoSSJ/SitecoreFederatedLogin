@@ -58,7 +58,7 @@ namespace SitecoreOwinFederator.Controllers
         Log.Debug("SitecoreOwin Owin user name: " +
                   System.Web.HttpContext.Current.GetOwinContext().Authentication.User.Identity.Name);
 
-        //var ctx = Tracker.Current.Session;
+        var ctx = Tracker.Current?.Session;
         // Login the sitecore user with the claims identity that was provided by identity ticket
         LoginHelper loginHelper = new LoginHelper();
         loginHelper.Login(principal);
@@ -68,13 +68,8 @@ namespace SitecoreOwinFederator.Controllers
                   System.Web.HttpContext.Current.GetOwinContext().Authentication.User.Identity.Name);
 
         System.Web.HttpContext.Current.User = Context.User;
-      }
-      catch (Exception e)
-      {
-        Log.Error("SitecoreOwin error: " + e.Message, e);
-        throw;
-      }
-      //ctx = Tracker.Current.Session;
+
+        ctx = Tracker.Current?.Session;
 
       // temporary code to show user claims, while there is a sitecore user object as
       //UserClaimsModel ucm = new UserClaimsModel();
@@ -96,10 +91,16 @@ namespace SitecoreOwinFederator.Controllers
       {
         Log.Debug("SitecoreOwin: In AuthController login, user matched roles to redirect to edit");
         redirect += Constants.SitecoreStartEditingParameter;
-      }        
+        }
 
       Log.Debug("SitecoreOwin: In AuthController login, redirecting to " + redirect);
       return Redirect(redirect);
+    }
+      catch (Exception e)
+      {
+        Log.Error("SitecoreOwin error in login: " + e.Message, e);
+        throw;
+      }
     }
 
     /// <summary>
@@ -115,7 +116,7 @@ namespace SitecoreOwinFederator.Controllers
 
       if (Request.IsAuthenticated)
       {
-        Log.Audit("SitecoreOwin: Logging out user " + Context.User.Name,this);
+        Log.Audit("SitecoreOwin: Logging out user " + Context.User.Name, this);
 
         string redirect = "/";
         if (!WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName).IsNullOrEmpty() && Settings.GetBoolSetting(Constants.RedirectToCurrentLocationSettingName, false))
@@ -123,7 +124,8 @@ namespace SitecoreOwinFederator.Controllers
 
         AuthenticationProperties properties = new AuthenticationProperties();
         
-        properties.RedirectUri = "https://" + Context.Site.TargetHostName + redirect;        
+
+        properties.RedirectUri = "https://" + Context.Site.TargetHostName + redirect;
         properties.AllowRefresh = false;
         AuthenticationManager.Logout();
         foreach (AuthenticationProvider authenticationProvider in AuthenticationManager.Providers)
@@ -136,10 +138,8 @@ namespace SitecoreOwinFederator.Controllers
         Session.Abandon();
         if (!TicketManager.GetCurrentTicketId().IsNullOrEmpty())
           TicketManager.RemoveTicket(TicketManager.GetCurrentTicketId());
-        WebUtil.SetCookieValue(Constants.SitecoreUserTicketCookieName, "",DateTime.Now.AddDays(-1));
+        WebUtil.SetCookieValue(Constants.SitecoreUserTicketCookieName, "", DateTime.Now.AddDays(-1));
 
-        Request.GetOwinContext().Authentication.SignOut(properties);
-        
         Log.Debug("SitecoreOwin: In AuthController logout, redirecting to " + redirect);
         return Redirect(redirect);
 
