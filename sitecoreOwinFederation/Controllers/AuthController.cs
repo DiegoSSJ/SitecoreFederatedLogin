@@ -23,12 +23,12 @@ namespace SitecoreOwinFederator.Controllers
   /// </summary>
   public class AuthController : Controller
   {
-    //// GET: Auth
-    //[Authorize]
-    ////public ActionResult Index(string sc_itemid, string sc_lang, string sc_db, string sc_device, string sc_mode, string sc_debug, string sc_trace, string sc_prof, string sc_ri, string sc_rb)
-    //public ActionResult Index(string [] parameters)
+    // GET: Auth
+    [Authorize]
+    //public ActionResult Index(string sc_itemid, string sc_lang, string sc_db, string sc_device, string sc_mode, string sc_debug, string sc_trace, string sc_prof, string sc_ri, string sc_rb)
+    //public ActionResult Index(string[] parameters)
     //{
-    //  Log.Debug("SitecoreOwin Login with string[]");
+    //  Log.Info("SitecoreOwin Login with string[]",this);
     //  //WebUtil.SetCookieValue(Constants.AdfsCurrentPathSaveCookieName, returnUrl);
     //  return Index();
     //}
@@ -44,7 +44,8 @@ namespace SitecoreOwinFederator.Controllers
 
     // GET: Auth
     [Authorize]
-    public ActionResult Index()
+    //public ActionResult Index()
+    public ActionResult Index(string[] parameters)
     {
       Log.Debug("SitecoreOwin AuthController Index");
 
@@ -71,31 +72,31 @@ namespace SitecoreOwinFederator.Controllers
 
         ctx = Tracker.Current?.Session;
 
-      // temporary code to show user claims, while there is a sitecore user object as
-      //UserClaimsModel ucm = new UserClaimsModel();
-      //ucm.Claims = ((ClaimsPrincipal)principal).Claims;
-      //return View(ucm);
-      string redirect = "/";
-      if (Settings.GetBoolSetting(Constants.RedirectToCurrentLocationSettingName,false)
-        && !WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName).IsNullOrEmpty() &&
-          !WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName).Contains("logout"))
-      {
-        Log.Debug("SitecoreOwin: In AuthController login, found adfsSavePath cookie with value: " + WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName));
-        redirect = WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName);
-      }
-
-      string rolesToRedirectToEdit = Settings.GetSetting(Constants.RolesToRedirectToEditSettingName, "");
-      Log.Debug("SitecoreOwin: In AuthController login, rolesToRedirectToEdit is :" + rolesToRedirectToEdit);
-      if (!rolesToRedirectToEdit.IsNullOrEmpty() &&
-          rolesToRedirectToEdit.Split('|').Any(role => Context.User.IsInRole(role)))
-      {
-        Log.Debug("SitecoreOwin: In AuthController login, user matched roles to redirect to edit");
-        redirect += Constants.SitecoreStartEditingParameter;
+        // temporary code to show user claims, while there is a sitecore user object as
+        //UserClaimsModel ucm = new UserClaimsModel();
+        //ucm.Claims = ((ClaimsPrincipal)principal).Claims;
+        //return View(ucm);
+        string redirect = "/";
+        if (Settings.GetBoolSetting(Constants.RedirectToCurrentLocationSettingName, false)
+          && !WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName).IsNullOrEmpty() &&
+            !WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName).Contains("logout"))
+        {
+          Log.Debug("SitecoreOwin: In AuthController login, found adfsSavePath cookie with value: " + WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName));
+          redirect = WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName);
         }
 
-      Log.Debug("SitecoreOwin: In AuthController login, redirecting to " + redirect);
-      return Redirect(redirect);
-    }
+        string rolesToRedirectToEdit = Settings.GetSetting(Constants.RolesToRedirectToEditSettingName, "");
+        Log.Debug("SitecoreOwin: In AuthController login, rolesToRedirectToEdit is :" + rolesToRedirectToEdit);
+        if (!rolesToRedirectToEdit.IsNullOrEmpty() &&
+            rolesToRedirectToEdit.Split('|').Any(role => Context.User.IsInRole(role)))
+        {
+          Log.Debug("SitecoreOwin: In AuthController login, user matched roles to redirect to edit");
+          redirect += Constants.SitecoreStartEditingParameter;
+        }
+
+        Log.Debug("SitecoreOwin: In AuthController login, redirecting to " + redirect);
+        return Redirect(redirect);
+      }
       catch (Exception e)
       {
         Log.Error("SitecoreOwin error in login: " + e.Message, e);
@@ -123,7 +124,7 @@ namespace SitecoreOwinFederator.Controllers
           redirect = WebUtil.GetCookieValue(Constants.AdfsCurrentPathSaveCookieName);
 
         AuthenticationProperties properties = new AuthenticationProperties();
-        
+
 
         properties.RedirectUri = "https://" + Context.Site.TargetHostName + redirect;
         properties.AllowRefresh = false;
