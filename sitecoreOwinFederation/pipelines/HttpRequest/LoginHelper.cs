@@ -72,7 +72,10 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
             Log.Audit("ADFS: User " + userName + " authenticated and logged in as existing user in Sitecore", this);
             var profile = Context.User.Profile;
 
-            // Do the default DFS user validation so that ADFS users can access DAM.
+            // Do the default DFS user validation so that ADFS users can access DAM. This is a per user stored information that is done via Sitecore authentication manager but
+			// is only used by Digizuite
+			// TODO: When we want to have different logged in DFS members per liu role (ie, one for employees and one for editors, etc) then we can check the role here and
+			// do different member validations in digizuite according to that role
             DoDfsMemberValidation();
 
             if (profile != null)
