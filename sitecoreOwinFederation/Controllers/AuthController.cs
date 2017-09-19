@@ -50,9 +50,6 @@ namespace SitecoreOwinFederator.Controllers
 
       try
       {
-        // Get ID ticket from .ASP.Net cookie. This ticket doesnt contain an identity, 
-        // but a reference to the identity in the Session Store                          
-        var principal = IdentityHelper.GetCurrentClaimsPrincipal();
 
         System.Web.HttpContext.Current.GetOwinContext().Authentication.Challenge();
         Log.Debug("SitecoreOwin Owin user name: " +
@@ -61,7 +58,7 @@ namespace SitecoreOwinFederator.Controllers
         var ctx = Tracker.Current?.Session;
         // Login the sitecore user with the claims identity that was provided by identity ticket
         LoginHelper loginHelper = new LoginHelper();
-        loginHelper.Login(principal);
+        loginHelper.Login(System.Web.HttpContext.Current.User.Identity);
 
         Log.Debug("SitecoreOwin: After log in in AuthController, user is " + Context.User.GetLocalName());
         Log.Debug("SitecoreOwin: After log in Owin user name: " +

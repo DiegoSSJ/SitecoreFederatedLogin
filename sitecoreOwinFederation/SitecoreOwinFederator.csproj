@@ -187,7 +187,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Authenticator\IdentityHelper.cs" />
-    <Compile Include="Authenticator\EFAuthStore.cs" />
     <Compile Include="Authenticator\MachineKeyProtector.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Controllers\AuthController.cs" />

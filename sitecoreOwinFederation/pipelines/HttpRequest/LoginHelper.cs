@@ -12,7 +12,7 @@ using Sitecore.Diagnostics;
 using Sitecore.Security.Accounts;
 using Sitecore.Security.Authentication;
 using Sitecore.StringExtensions;
-using Sitecore.Web.Authentication;
+using SitecoreOwinFederator.Authenticator;
 
 #endregion
 
@@ -22,13 +22,12 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
   {
     /// <summary>
     /// Logins the specified user.
-    /// </summary>
-    /// <param name="principal">The user.</param>
-    public void Login(IPrincipal principal)
+    /// </summary>  
+    /// <param name="identity"></param>
+    public void Login(IIdentity identity)
     {
       Log.Debug("SitecoreOwin: In LoginHelper");
-
-      var identity = principal.Identity;
+      
       var allowLoginToShell = false;
 #region basic debug output (auth provider, identity, is authenticated, claims, liu id)
 #if DEBUG
@@ -47,7 +46,7 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
 
 
 
-      var liuId = GetLiUIdFromClaims(principal.Identity as ClaimsIdentity);
+      var liuId = GetLiUIdFromClaims(IdentityHelper.GetAuthTokenForCurrentUser());
       if (string.IsNullOrEmpty(liuId))
         throw new IdentityNotMappedException();
       
@@ -100,7 +99,7 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
           var roles = Context.Domain.GetRoles();
           if (roles != null)
           {
-            var groups = GetGroups(principal.Identity as ClaimsIdentity);
+            var groups = GetGroups(identity as ClaimsIdentity);
             foreach (var role in from role in roles
                                  let roleName = GetRoleName(role.Name)
                                  where groups.Contains(roleName.ToLower()) && !virtualUser.Roles.Contains(role)

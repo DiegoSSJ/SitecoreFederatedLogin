@@ -40,11 +40,8 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
         return;
       }
 
-      string key = String.Empty;
       ClaimsPrincipal federatedUser = null;
-      key = IdentityHelper.GetAuthTokenFromCookie();
       Log.Debug("SitecoreOwin: In AuthChecker. Domain is " + Context.Domain.Name);
-
 
       //HttpContext.Current.Response.Cookies.Set(new HttpCookie("adfsSavedPath", HttpContext.Current.Request.Path));      
       //if (Context.Item != null)
@@ -66,7 +63,7 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
       //if (!Context.Domain.Name.Equals("sitecore") || !( Context.IsLoggedIn && Context.User.Domain.Name.Equals("sitecore")) )
       //if (HttpContext.Current.Request.IsAuthenticated)
       //{
-        federatedUser = IdentityHelper.GetCurrentClaimsPrincipal() as ClaimsPrincipal;
+        federatedUser = ClaimsPrincipal.Current;
 
         // algorithm:
         // 1 - if user is not logged in AND claimscookie is missing, return: anonymous visit -> handle in pipeline
@@ -78,33 +75,20 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
         // 7-  if no claimscookie, no fed ID and sitecore login available: logout and redirect -> pipeline. 
         // handled by  
 
-        Log.Debug("SitecoreOwin: In AuthChecker. User is logged in: " + Context.IsLoggedIn + " key: " + key + " federatedUser: " + (federatedUser != null ? federatedUser.Identity.Name : "null"));
+        Log.Debug("SitecoreOwin: In AuthChecker. User is logged in: " + Context.IsLoggedIn + /*" key: " + key +*/ " federatedUser: " + (federatedUser != null ? federatedUser.Identity.Name : "null"));
 
 
 
         // 1 - anonymous
-        if (!Context.IsLoggedIn && String.IsNullOrEmpty(key))
+        if (!Context.IsLoggedIn)
           return;
-        // 5 & 7 - pipeline if user is logged in
-        else if (Context.IsLoggedIn && String.IsNullOrEmpty(key))
-        {
-          // Logged in from Sitecore 
-          if (Context.IsLoggedIn && Context.User.Domain.Name.Equals("sitecore"))
-            return;
-          LogoutAndRedirectToLogoutPage();
-        }
 
 
         // 6 - pipeline 
-        else if (!String.IsNullOrEmpty(key) && Context.IsLoggedIn && federatedUser == null)
-        {
-          LogoutAndRedirectToLogoutPage();
-        }
-
         // 8 all identities available
         // check if identity matches.
         // if not: redirect. Otherwise: return
-        else if (!String.IsNullOrEmpty(key) && Context.IsLoggedIn && federatedUser != null)
+        else if (Context.IsLoggedIn && federatedUser != null)
         {
           var user = Context.User;
           Log.Debug("SitecoreOwin in AuthChecker: Case 8. user name: " + user.Name + " federated name: " + federatedUser.Identity.Name);
@@ -132,7 +116,7 @@ namespace SitecoreOwinFederator.pipelines.HttpRequest
             Log.Debug("SitecoreOwin  is forms enabled: " + FormsAuthentication.IsEnabled);
             AuthenticationManager.SetActiveUser(customName);
             LoginHelper loginHelper = new LoginHelper();
-            loginHelper.Login(federatedUser);
+            loginHelper.Login(federatedUser.Identity);
           }
         //}
         // several options:

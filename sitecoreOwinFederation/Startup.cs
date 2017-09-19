@@ -19,16 +19,16 @@ namespace SitecoreOwinFederator
             app.MapWhen(ctx => MapDomain(ctx, "multisite.local"), site =>
             {
                 site.SetDefaultSignInAsAuthenticationType(CookieAuthenticationDefaults.AuthenticationType);
-                site.UseCookieAuthentication(new CookieAuthenticationOptions
-                {
-                    SlidingExpiration = false,
-                    SessionStore = new SqlAuthSessionStore(new TicketDataFormat(new MachineKeyProtector())),
-                    TicketDataFormat = new TicketDataFormat(new MachineKeyProtector()),    
-                    Provider = new CookieAuthenticationProvider
-                    {
-                        OnException = exception => HandleException(exception)
-                    }                
-                });
+                //site.UseCookieAuthentication(new CookieAuthenticationOptions
+                //{
+                //    SlidingExpiration = false,
+                //    SessionStore = new SqlAuthSessionStore(new TicketDataFormat(new MachineKeyProtector())),
+                //    TicketDataFormat = new TicketDataFormat(new MachineKeyProtector()),    
+                //    Provider = new CookieAuthenticationProvider
+                //    {
+                //        OnException = exception => HandleException(exception)
+                //    }                
+                //});
 
                 site.UseWsFederationAuthentication(new WsFederationAuthenticationOptions
                 {
@@ -41,17 +41,17 @@ namespace SitecoreOwinFederator
 
             app.MapWhen(ctx => MapDomain(ctx, "multisite2.local"), site =>
             {
-                site.SetDefaultSignInAsAuthenticationType(CookieAuthenticationDefaults.AuthenticationType);
-                site.UseCookieAuthentication(new CookieAuthenticationOptions
-                {
-                    SlidingExpiration = false,
-                    SessionStore = new SqlAuthSessionStore(new TicketDataFormat(new MachineKeyProtector())),
-                    TicketDataFormat = new TicketDataFormat(new MachineKeyProtector()),
-                    Provider = new CookieAuthenticationProvider
-                    {
-                        OnException = exception => HandleException(exception)
-                    }
-                });
+                site.SetDefaultSignInAsAuthenticationType(CookieAuthenticationDefaults.AuthenticationType);                
+                //site.UseCookieAuthentication(new CookieAuthenticationOptions
+                //{
+                //    SlidingExpiration = false,
+                //    SessionStore = new SqlAuthSessionStore(new TicketDataFormat(new MachineKeyProtector())),
+                //    TicketDataFormat = new TicketDataFormat(new MachineKeyProtector()),
+                //    Provider = new CookieAuthenticationProvider
+                //    {
+                //        OnException = exception => HandleException(exception)
+                //    }
+                //});
 
                 site.UseWsFederationAuthentication(new WsFederationAuthenticationOptions
                 {
@@ -64,17 +64,17 @@ namespace SitecoreOwinFederator
             app.MapWhen(ctx => MapDomain(ctx, "multisite3.local"), site =>
             {
                 site.SetDefaultSignInAsAuthenticationType(CookieAuthenticationDefaults.AuthenticationType);
-                site.UseCookieAuthentication(new CookieAuthenticationOptions
-                {
-                    SlidingExpiration = false,
-                    SessionStore = new SqlAuthSessionStore(new TicketDataFormat(new MachineKeyProtector())),
-                    TicketDataFormat = new TicketDataFormat(new MachineKeyProtector()),
-                    Provider = new CookieAuthenticationProvider
-                    {
+                //site.UseCookieAuthentication(new CookieAuthenticationOptions
+                //{
+                //    SlidingExpiration = false,
+                //    SessionStore = new SqlAuthSessionStore(new TicketDataFormat(new MachineKeyProtector())),
+                //    TicketDataFormat = new TicketDataFormat(new MachineKeyProtector()),
+                //    Provider = new CookieAuthenticationProvider
+                //    {
                         
-                        OnException = exception => HandleException(exception)
-                    }
-                });
+                //        OnException = exception => HandleException(exception)
+                //    }
+                //});
 
                 site.UseWsFederationAuthentication(new WsFederationAuthenticationOptions
                 {
