@@ -28,7 +28,7 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
     {
       Log.Debug("SitecoreOwin: In LoginHelper");
       
-#region basic debug output (auth provider, identity, is authenticated, claims, liu id)
+      #region basic debug output (auth provider, identity, is authenticated, claims, liu id)
 #if DEBUG
       Log.Debug("Authentication provider: " + AuthenticationManager.Provider.Description, this);
       Log.Debug(string.Format("Identity name: {0} ", identity.Name), this);
@@ -37,7 +37,8 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
       WriteClaimsInfo(principal.Identity as ClaimsIdentity);
       Log.Debug("User's liu-id: " + GetLiUIdFromClaims(principal.Identity as ClaimsIdentity));
 #endif
-#endregion   
+
+      #endregion
 
       if (!identity.IsAuthenticated)
         return;
@@ -45,13 +46,16 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
 
 
 
+     
       var liuId = GetLiUIdFromClaims(IdentityHelper.GetAuthTokenForCurrentUser());
       if (string.IsNullOrEmpty(liuId))
         throw new IdentityNotMappedException();
-      
+     
+
 
       var userName = string.Format("{0}\\{1}", Context.Domain.Name, liuId.IsNullOrEmpty() ?  identity.Name : liuId);
-      
+     
+
       Log.Debug("SitecoreOwin: userName is " + userName + " Domain is : " + Context.Domain.Name);
       try
       {
@@ -62,13 +66,20 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
           Boolean loginResult = AuthenticationManager.Login(realUser);
           // Behövs så att TicketManager körs, via allowLogintoShell = true
           Boolean loginResult2 = AuthenticationManager.Login(userName, !Settings.Login.DisableRememberMe, true);
-          Log.Debug("ADFS: Logging user with persist: " + !Settings.Login.DisableRememberMe, this);         
+          Log.Debug("ADFS: Logging user with persist: " + !Settings.Login.DisableRememberMe, this);
 
           if (loginResult && loginResult2)
           {
-            
+           
+
             Log.Audit("ADFS: User " + userName + " authenticated and logged in as existing user in Sitecore", this);
-            var profile = Context.User.Profile;            
+            var profile = Context.User.Profile;
+
+            // Do the default DFS user validation so that ADFS users can access DAM. This is a per user stored information that is done via Sitecore authentication manager but
+			// is only used by Digizuite
+			// TODO: When we want to have different logged in DFS members per liu role (ie, one for employees and one for editors, etc) then we can check the role here and
+			// do different member validations in digizuite according to that role
+            DoDfsMemberValidation();
 
             if (profile != null)
             {
@@ -134,6 +145,40 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
       catch (ArgumentException ex)
       {
         Log.Error("ADFS::Login Failed!", ex, this);
+      }
+    }
+
+
+    private void DoDfsMemberValidation()
+    {
+      try
+      {
+        var dfsCs = new DFS.Digizuite.Services.ConnectService();
+
+        string baseUrl = Settings.GetSetting("DFS.AssetSiloSettings.Default.BaseAddress",
+          "https://admin.media.test.it.liu.se/");
+        string configVersionId = Settings.GetSetting("DFS.AssetSiloSettings.Default.ConfigVersionId", "!/5/");
+        //dfsCs.BaseUrl = "https://admin.media.test.it.liu.se/";
+        //dfsCs.ConfigVersionId = "!/5/";
+
+        Log.Debug("SitecoreOwin: setting parameters for validation call baseurl=" + baseUrl + " configVersionId=" + configVersionId);
+
+        dfsCs.BaseUrl = baseUrl;
+        dfsCs.ConfigVersionId = configVersionId;
+
+        string dfsLiuDefaultAdfsUser = Settings.GetSetting("DFS.LiU.DefaultAdfsUser", "sitecore\\admindfs");
+        string dfsLiuDefaultAdfsUserPassword = Settings.GetSetting("DFS.LiU.DefaultAdfsUserPassword",
+          "#{DFS.LiU.DefaultAdfsUserPassword}");
+        Log.Debug(
+          dfsCs.ValidateDigizuiteMember(dfsLiuDefaultAdfsUser
+          , dfsLiuDefaultAdfsUserPassword)
+            ? "SitecoreOwin: Validated default DFS/ADFS/LiU user (" + dfsLiuDefaultAdfsUser + ") correctly"
+            : "SitecoreOwin: Digizuite Member not validated", this);
+      }
+      catch (Exception e)
+      {
+        Log.Error("SitecoreOwin: Exception doing DFS default user member validation: " + e.Message, this);
+        Log.Error("Stacktrace: " + e.StackTrace, this);
       }
     }
 
