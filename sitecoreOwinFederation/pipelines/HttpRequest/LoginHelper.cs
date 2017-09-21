@@ -28,7 +28,6 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
     {
       Log.Debug("SitecoreOwin: In LoginHelper");
       
-      var allowLoginToShell = false;
 #region basic debug output (auth provider, identity, is authenticated, claims, liu id)
 #if DEBUG
       Log.Debug("Authentication provider: " + AuthenticationManager.Provider.Description, this);
@@ -122,8 +121,6 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
             virtualUser.RuntimeSettings.IsAdministrator =
                 groups.Contains(Settings.GetSetting("ADFS.Authenticator.AdminUserRole", "Sitecore Local Administrators"), StringComparer.OrdinalIgnoreCase);
 
-            if (virtualUser.RuntimeSettings.IsAdministrator)
-              allowLoginToShell = true;
           }
           virtualUser.Profile.Email = "aap@app.com";
           Log.Debug("SitecoreOwin: Logging in virtual user: " + virtualUser.Name);

@@ -12,7 +12,6 @@ using Sitecore.Sites;
 using Sitecore.StringExtensions;
 using Sitecore.Web;
 using Sitecore.Web.Authentication;
-using SitecoreOwinFederator.Authenticator;
 using SitecoreOwinFederator.Pipelines.HttpRequest;
 
 namespace SitecoreOwinFederator.Controllers

@@ -1,10 +1,7 @@
-﻿using System.Threading.Tasks;
-using Microsoft.IdentityModel.Protocols;
-using Microsoft.Owin;
+﻿using Microsoft.Owin;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.DataHandler;
-using Microsoft.Owin.Security.Notifications;
 using Microsoft.Owin.Security.WsFederation;
 using Owin;
 using SitecoreOwinFederator.Authenticator;
@@ -125,21 +122,7 @@ namespace SitecoreOwinFederator
             return false;
         }
 
-        async Task<SecurityTokenValidatedNotification<WsFederationMessage, WsFederationAuthenticationOptions>> LoginSitecoreUser(SecurityTokenValidatedNotification<WsFederationMessage, WsFederationAuthenticationOptions> context)
-        {
-
-            //IPrincipal claimsPrincipal = new ClaimsPrincipal(context.AuthenticationTicket.Identity);
-            //// store claims in session
-            //IEnumerable<Claim> claims = context.AuthenticationTicket.Identity.Claims;
-            //ClientContext.SetValue("bla", "diebla");
-            //LoginHelper loginHelper = new LoginHelper();
-            //loginHelper.Login(claimsPrincipal);
-
-
-            return context;
-        }
-
-        //private void PrintCurrentIntegratedPipelineStage(IOwinContext context, string v)
+      //private void PrintCurrentIntegratedPipelineStage(IOwinContext context, string v)
         //{
         //    var currentIntegratedpipelineStage = HttpContext.Current.CurrentNotification;
         //    context.Get<TextWriter>("host.TraceOutput").WriteLine(
