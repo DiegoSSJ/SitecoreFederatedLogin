@@ -6,7 +6,7 @@ using System.Web;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.DataHandler;
 
-namespace SitecoreOwinFederator.Authenticator
+namespace SitecoreOwinFederatorLiUNoDFS.Authenticator
 {
     /// <summary>
     /// Helper class which helps to retrieve the claimsprincipal from the .AspNet.Cookies cookie

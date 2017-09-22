@@ -2,7 +2,7 @@
 using Sitecore.Diagnostics;
 using Sitecore.Pipelines.PreprocessRequest;
 
-namespace SitecoreOwinFederator.pipelines.PreprocessRequest
+namespace SitecoreOwinFederatorLiUNoDFS.pipelines.PreprocessRequest
 {
   public class SuppressAdfsFormValidation : PreprocessRequestProcessor
   {

@@ -1,4 +1,4 @@
-﻿namespace SitecoreOwinFederator
+﻿namespace SitecoreOwinFederatorLiUNoDFS
 {
   public class Constants
   {

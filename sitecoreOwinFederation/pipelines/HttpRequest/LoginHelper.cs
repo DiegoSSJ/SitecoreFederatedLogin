@@ -1,4 +1,5 @@
 ﻿#region
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,11 +13,11 @@ using Sitecore.Diagnostics;
 using Sitecore.Security.Accounts;
 using Sitecore.Security.Authentication;
 using Sitecore.StringExtensions;
-using SitecoreOwinFederator.Authenticator;
+using SitecoreOwinFederatorLiUNoDFS.Authenticator;
 
 #endregion
 
-namespace SitecoreOwinFederator.Pipelines.HttpRequest
+namespace SitecoreOwinFederatorLiUNoDFS.pipelines.HttpRequest
 {
   public class LoginHelper
   {

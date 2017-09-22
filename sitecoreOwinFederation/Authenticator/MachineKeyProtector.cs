@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using Microsoft.Owin.Security.Cookies;
+﻿using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.DataProtection;
 
-namespace SitecoreOwinFederator.Authenticator
+namespace SitecoreOwinFederatorLiUNoDFS.Authenticator
 {
     /// <summary>
     /// MachineKey Protector, same implementation as internal machinekey protector.
