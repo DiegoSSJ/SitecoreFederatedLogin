@@ -79,7 +79,6 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
 			// is only used by Digizuite
 			// TODO: When we want to have different logged in DFS members per liu role (ie, one for employees and one for editors, etc) then we can check the role here and
 			// do different member validations in digizuite according to that role
-            DoDfsMemberValidation();
 
             if (profile != null)
             {
@@ -145,40 +144,6 @@ namespace SitecoreOwinFederator.Pipelines.HttpRequest
       catch (ArgumentException ex)
       {
         Log.Error("ADFS::Login Failed!", ex, this);
-      }
-    }
-
-
-    private void DoDfsMemberValidation()
-    {
-      try
-      {
-        var dfsCs = new DFS.Digizuite.Services.ConnectService();
-
-        string baseUrl = Settings.GetSetting("DFS.AssetSiloSettings.Default.BaseAddress",
-          "https://admin.media.test.it.liu.se/");
-        string configVersionId = Settings.GetSetting("DFS.AssetSiloSettings.Default.ConfigVersionId", "!/5/");
-        //dfsCs.BaseUrl = "https://admin.media.test.it.liu.se/";
-        //dfsCs.ConfigVersionId = "!/5/";
-
-        Log.Debug("SitecoreOwin: setting parameters for validation call baseurl=" + baseUrl + " configVersionId=" + configVersionId);
-
-        dfsCs.BaseUrl = baseUrl;
-        dfsCs.ConfigVersionId = configVersionId;
-
-        string dfsLiuDefaultAdfsUser = Settings.GetSetting("DFS.LiU.DefaultAdfsUser", "sitecore\\admindfs");
-        string dfsLiuDefaultAdfsUserPassword = Settings.GetSetting("DFS.LiU.DefaultAdfsUserPassword",
-          "#{DFS.LiU.DefaultAdfsUserPassword}");
-        Log.Debug(
-          dfsCs.ValidateDigizuiteMember(dfsLiuDefaultAdfsUser
-          , dfsLiuDefaultAdfsUserPassword)
-            ? "SitecoreOwin: Validated default DFS/ADFS/LiU user (" + dfsLiuDefaultAdfsUser + ") correctly"
-            : "SitecoreOwin: Digizuite Member not validated", this);
-      }
-      catch (Exception e)
-      {
-        Log.Error("SitecoreOwin: Exception doing DFS default user member validation: " + e.Message, this);
-        Log.Error("Stacktrace: " + e.StackTrace, this);
       }
     }
 
