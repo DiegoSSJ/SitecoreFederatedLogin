@@ -12,9 +12,9 @@ using Sitecore.Sites;
 using Sitecore.StringExtensions;
 using Sitecore.Web;
 using Sitecore.Web.Authentication;
-using SitecoreOwinFederator.Pipelines.HttpRequest;
+using SitecoreOwinFederatorLiU.Pipelines.HttpRequest;
 
-namespace SitecoreOwinFederator.Controllers
+namespace SitecoreOwinFederatorLiU.Controllers
 {
   /// <summary>
   /// Authentication controller, contains login and logout functionality.

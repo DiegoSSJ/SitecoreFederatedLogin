@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Security.Claims;
-using System.Web;
 
-namespace SitecoreOwinFederator.Models
+namespace SitecoreOwinFederatorLiU.Models
 {
     /// <summary>
     /// claims model to displau in rendering. Can be removed for production

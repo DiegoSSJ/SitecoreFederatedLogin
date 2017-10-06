@@ -1,10 +1,8 @@
 ﻿using Microsoft.Owin;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Cookies;
-using Microsoft.Owin.Security.DataHandler;
 using Microsoft.Owin.Security.WsFederation;
 using Owin;
-using SitecoreOwinFederator.Authenticator;
 
 [assembly: OwinStartup(typeof(SitecoreOwinFederator.Startup))]
 namespace SitecoreOwinFederator

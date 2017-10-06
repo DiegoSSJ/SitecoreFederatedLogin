@@ -12,11 +12,11 @@ using Sitecore.Diagnostics;
 using Sitecore.Security.Accounts;
 using Sitecore.Security.Authentication;
 using Sitecore.StringExtensions;
-using SitecoreOwinFederator.Authenticator;
+using SitecoreOwinFederatorLiU.Authenticator;
 
 #endregion
 
-namespace SitecoreOwinFederator.Pipelines.HttpRequest
+namespace SitecoreOwinFederatorLiU.Pipelines.HttpRequest
 {
   public class LoginHelper
   {

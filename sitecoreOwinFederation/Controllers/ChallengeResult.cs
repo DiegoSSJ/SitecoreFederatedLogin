@@ -2,7 +2,7 @@
 using System.Web.Mvc;
 using Microsoft.Owin.Security;
 
-namespace SitecoreOwinFederator.Controllers
+namespace SitecoreOwinFederatorLiU.Controllers
 {
     class ChallengeResult : HttpUnauthorizedResult
     {

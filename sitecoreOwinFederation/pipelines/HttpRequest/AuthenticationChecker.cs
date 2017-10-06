@@ -11,9 +11,9 @@ using Sitecore.Sites;
 using Sitecore.StringExtensions;
 using Sitecore.Text;
 using Sitecore.Web;
-using SitecoreOwinFederator.Pipelines.HttpRequest;
+using SitecoreOwinFederatorLiU.Pipelines.HttpRequest;
 
-namespace SitecoreOwinFederator.pipelines.HttpRequest
+namespace SitecoreOwinFederatorLiU.pipelines.HttpRequest
 {
   /// <summary>
   /// Verifies authentication tickets:

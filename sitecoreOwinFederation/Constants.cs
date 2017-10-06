@@ -1,4 +1,4 @@
-﻿namespace SitecoreOwinFederator
+﻿namespace SitecoreOwinFederatorLiU
 {
   public class Constants
   {
