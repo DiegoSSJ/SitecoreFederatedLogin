@@ -174,6 +174,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="App_Config\Include\WSFederation.Pipeline.HandleOwinLogout.config" />
     <None Include="App_Config\Include\WSFederation.Pipeline.SuppressFormValidation.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
@@ -198,6 +199,7 @@
     <Compile Include="Models\UserClaimsModel.cs" />
     <Compile Include="pipelines\HttpRequest\AuthenticationChecker.cs" />
     <Compile Include="pipelines\HttpRequest\LoginHelper.cs" />
+    <Compile Include="pipelines\Logout\HandleSitecoreLogout.cs" />
     <Compile Include="pipelines\PreprocessRequest\SuppressADFSFormValidation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
