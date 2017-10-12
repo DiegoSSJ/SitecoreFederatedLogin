@@ -27,15 +27,15 @@ namespace SitecoreOwinFederatorLiU.Pipelines.HttpRequest
     public void Login(IIdentity identity)
     {
       Log.Debug("SitecoreOwin: In LoginHelper");
-      
+
       #region basic debug output (auth provider, identity, is authenticated, claims, liu id)
 #if DEBUG
       Log.Debug("Authentication provider: " + AuthenticationManager.Provider.Description, this);
       Log.Debug(string.Format("Identity name: {0} ", identity.Name), this);
 
       Log.Debug(string.Format("Is authenticated: {0} ", identity.IsAuthenticated), this);
-      WriteClaimsInfo(principal.Identity as ClaimsIdentity);
-      Log.Debug("User's liu-id: " + GetLiUIdFromClaims(principal.Identity as ClaimsIdentity));
+      WriteClaimsInfo(identity as ClaimsIdentity);
+      Log.Debug("User's liu-id: " + GetLiUIdFromClaims(identity as ClaimsIdentity));
 #endif
 
       #endregion
@@ -46,15 +46,16 @@ namespace SitecoreOwinFederatorLiU.Pipelines.HttpRequest
 
 
 
-     
+
       var liuId = GetLiUIdFromClaims(IdentityHelper.GetAuthTokenForCurrentUser());
+      var userName = GetUsernameFromClaims(IdentityHelper.GetAuthTokenForCurrentUser());
       if (string.IsNullOrEmpty(liuId))
         throw new IdentityNotMappedException();
-     
 
 
-      var userName = string.Format("{0}\\{1}", Context.Domain.Name, liuId.IsNullOrEmpty() ?  identity.Name : liuId);
-     
+
+      //var userName = string.Format("{0}\\{1}", Context.Domain.Name, liuId.IsNullOrEmpty() ? identity.Name : liuId);
+
 
       Log.Debug("SitecoreOwin: userName is " + userName + " Domain is : " + Context.Domain.Name);
       try
@@ -70,15 +71,15 @@ namespace SitecoreOwinFederatorLiU.Pipelines.HttpRequest
 
           if (loginResult && loginResult2)
           {
-           
+
 
             Log.Audit("ADFS: User " + userName + " authenticated and logged in as existing user in Sitecore", this);
             var profile = Context.User.Profile;
 
             // Do the default DFS user validation so that ADFS users can access DAM. This is a per user stored information that is done via Sitecore authentication manager but
-			// is only used by Digizuite
-			// TODO: When we want to have different logged in DFS members per liu role (ie, one for employees and one for editors, etc) then we can check the role here and
-			// do different member validations in digizuite according to that role
+            // is only used by Digizuite
+            // TODO: When we want to have different logged in DFS members per liu role (ie, one for employees and one for editors, etc) then we can check the role here and
+            // do different member validations in digizuite according to that role
             DoDfsMemberValidation();
 
             if (profile != null)
@@ -225,10 +226,41 @@ namespace SitecoreOwinFederatorLiU.Pipelines.HttpRequest
     private void WriteClaimsInfo(ClaimsIdentity claimsIdentity)
     {
       Log.Debug("Writing Claims Info", this);
-      foreach (var claim in claimsIdentity.Claims)
-        Log.Debug(string.Format("Claim : {0} , {1}", claim.Type, claim.Value), this);
+      if ( claimsIdentity != null && claimsIdentity.Claims != null )
+      {
+        foreach (var claim in claimsIdentity?.Claims)
+          Log.Debug(string.Format("Claim : {0} , {1}", claim.Type, claim.Value), this);
+
+      }
     }
 
+
+    /// <summary>
+    /// Returns the username from the claims
+    /// </summary>
+    /// <param name="claimsIdentity">The claims identity.</param>
+    public string GetUsernameFromClaims(ClaimsIdentity claimsIdentity)
+    {
+      if (claimsIdentity == null)
+      {
+        Log.Error("Fick inga claims", this);
+        return "";
+      }
+
+      if (claimsIdentity.Claims.All(c => c.Type != claimsIdentity.NameClaimType))
+      {
+        Log.Error("Fick inga Name claims", this);
+        return "";
+      }
+
+      var enumerable = claimsIdentity.Claims.Where(
+          c => c.Type == claimsIdentity.NameClaimType).ToList();
+      foreach (var claim in enumerable)
+        Log.Debug("Name claims to get LiU-ID from: " + claim.Value);
+      var foundLiUId = enumerable.Find(d => d.Value.Contains(@"\")).Value;
+      Log.Debug("Found liu id " + foundLiUId);
+      return foundLiUId;
+    }
 
     /// <summary>
     /// Returns the LiU-id from the claims
